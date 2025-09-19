@@ -1,22 +1,3 @@
-// --- IMPORTANT FIX FOR 3 BUILD ERRORS ---
-// Your application is failing to compile because of three missing items.
-// Please follow these steps carefully to fix your project setup.
-//
-// ERROR 1 & 2: Missing PDF Libraries ('jspdf', 'html2canvas')
-// SOLUTION: You need to install these two packages.
-//   1. Stop your server (press Ctrl + C in the terminal).
-//   2. Run this exact command:
-//      npm install jspdf html2canvas
-//
-// ERROR 3: Missing Signature Image ('./image_b545b8.png')
-// SOLUTION: The image file is not in the correct folder.
-//   1. Find your signature file named 'image_b545b8.png'.
-//   2. Move this file into the 'src/components/' folder, right next to this BillingApp.jsx file.
-//
-// After completing both steps, restart your server with 'npm run dev'.
-// The code below is correct and does not need to be changed.
-// -------------------------------------------------------------
-
 import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Printer, Save, FileText, Percent } from 'lucide-react';
 import signatureImage from './image_b545b8.png';
