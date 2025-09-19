@@ -139,9 +139,6 @@ const BillingApp = () => {
           {/* --- Invoice Body --- */}
           <div ref={invoiceRef} className="p-4 sm:p-6 bg-white" id="invoice-content">
             <div className="border-2 border-black mb-4">
-              <div className="text-center text-xs p-1 border-b-2 border-black">
-                Certified that the particulars given above are true and correct
-              </div>
               <div className="flex flex-col sm:flex-row">
                 <div className="flex-1 p-4 border-b-2 sm:border-b-0 sm:border-r-2 border-black">
                   <h2 className="text-xl font-bold text-center mb-2">Dhruv Enterprises</h2>
@@ -348,11 +345,14 @@ const BillingApp = () => {
                 </div>
                 <div className="flex-1 p-4 text-center">
                   <div className="h-24 flex flex-col justify-between">
+                    <div className="text-center text-xs p-1 border-b-2 border-black">
+                    Certified that the particulars given above are true and correct
+                      <p className="font-bold text-sm">FOR: Dhruv Enterprises</p>
+              </div>
                     <div className="flex-grow flex items-center justify-center">
                       <img src={signatureImage} alt="Signature" className="h-12" />
                     </div>
                     <div>
-                      <p className="font-bold text-sm">FOR: Dhruv Enterprises</p>
                       <p className="font-bold text-sm">AUTHORIZED SIGNATORY</p>
                     </div>
                   </div>
