@@ -25,9 +25,11 @@ const BillingApp = () => {
   const [sgstRate, setSgstRate] = useState(9);
   const [igstRate, setIgstRate] = useState(0);
 
+  // New state to control the UI during PDF generation
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
+
   const invoiceRef = useRef();
 
-  // --- Utility Functions (no changes here) ---
   const numberToWords = (num) => {
     if (num === 0) return 'Zero';
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -54,6 +56,7 @@ const BillingApp = () => {
     }
     return result.trim() + ' Only';
   };
+
   const addItem = () => setItems([...items, { id: Date.now(), description: '', hsnCode: '', qty: 0, price: 0, amount: 0 }]);
   const removeItem = (id) => { if (items.length > 1) setItems(items.filter(item => item.id !== id)); };
   const updateItem = (id, field, value) => {
@@ -88,20 +91,29 @@ const BillingApp = () => {
     setItems([{ id: 1, description: '', hsnCode: '', qty: 0, price: 0, amount: 0 }]);
   };
   const handlePrint = () => window.print();
-  const handleSaveAsPDF = async () => {
-    const invoiceElement = invoiceRef.current;
-    if (!invoiceElement) return;
-    const canvas = await html2canvas(invoiceElement, { scale: 2 });
-    const imageData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const canvasAspectRatio = canvasWidth / canvasHeight;
-    const finalCanvasHeight = pdfWidth / canvasAspectRatio;
-    pdf.addImage(imageData, 'PNG', 0, 0, pdfWidth, finalCanvasHeight);
-    pdf.save(`invoice-${invoiceNumber}.pdf`);
+  
+  // Updated PDF generation logic
+  const handleSaveAsPDF = () => {
+    setIsSavingPdf(true); // Switch to "clean" UI
+    
+    setTimeout(() => { // Allow time for the UI to re-render
+      html2canvas(invoiceRef.current, { scale: 2 })
+        .then((canvas) => {
+          const imageData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const canvasAspectRatio = canvas.width / canvas.height;
+          const finalCanvasHeight = pdfWidth / canvasAspectRatio;
+          
+          pdf.addImage(imageData, 'PNG', 0, 0, pdfWidth, finalCanvasHeight);
+          pdf.save(`invoice-${invoiceNumber}.pdf`);
+        })
+        .finally(() => {
+          setIsSavingPdf(false); // Switch back to the interactive UI
+        });
+    }, 50);
   };
+
   const copyShipToParty = () => setShipToParty({ ...billToParty });
 
   return (
@@ -116,7 +128,6 @@ const BillingApp = () => {
       </style>
       <div className="min-h-screen bg-gray-100 p-2 sm:p-4">
         <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-          {/* --- Responsive Header --- */}
           <div className="bg-blue-600 text-white p-4 print:hidden">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <h1 className="text-xl font-bold flex items-center gap-2 self-center">
@@ -136,9 +147,11 @@ const BillingApp = () => {
             </div>
           </div>
 
-          {/* --- Invoice Body --- */}
           <div ref={invoiceRef} className="p-4 sm:p-6 bg-white" id="invoice-content">
             <div className="border-2 border-black mb-4">
+              <div className="text-center text-xs p-1 border-b-2 border-black">
+                Certified that the particulars given above are true and correct
+              </div>
               <div className="flex flex-col sm:flex-row">
                 <div className="flex-1 p-4 border-b-2 sm:border-b-0 sm:border-r-2 border-black">
                   <h2 className="text-xl font-bold text-center mb-2">Dhruv Enterprises</h2>
@@ -154,31 +167,30 @@ const BillingApp = () => {
                 <div className="w-full sm:w-2/5 p-4 text-center">
                   <h3 className="text-lg font-bold mb-4">TAX INVOICE</h3>
                   <div className="text-sm space-y-2">
-                     {/* Invoice details fields */}
                     <div className="flex justify-between items-center">
                       <span><strong>INVOICE NO :</strong></span>
-                      <input type="number" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-24 text-right outline-none print:hidden border-b border-gray-300" />
-                      <span className="hidden print:inline">{invoiceNumber}</span>
+                      <input type="number" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className={isSavingPdf ? 'hidden' : "w-24 text-right outline-none print:hidden border-b border-gray-300"} />
+                      <span className={isSavingPdf ? 'inline' : 'hidden print:inline'}>{invoiceNumber}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span><strong>INVOICE DATE :</strong></span>
-                      <input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="text-right outline-none print:hidden border-b border-gray-300"/>
-                      <span className="hidden print:inline">{new Date(invoiceDate).toLocaleDateString('en-GB')}</span>
+                      <input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className={isSavingPdf ? 'hidden' : "text-right outline-none print:hidden border-b border-gray-300"}/>
+                      <span className={isSavingPdf ? 'inline' : 'hidden print:inline'}>{new Date(invoiceDate).toLocaleDateString('en-GB')}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span><strong>DC NO :</strong></span>
-                       <input type="text" value={dcNo} onChange={(e) => setDcNo(e.target.value)} className="w-24 text-right outline-none print:hidden border-b border-gray-300"/>
-                      <span className="hidden print:inline">{dcNo}</span>
+                       <input type="text" value={dcNo} onChange={(e) => setDcNo(e.target.value)} className={isSavingPdf ? 'hidden' : "w-24 text-right outline-none print:hidden border-b border-gray-300"}/>
+                      <span className={isSavingPdf ? 'inline' : 'hidden print:inline'}>{dcNo}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span><strong>PO NO :</strong></span>
-                      <input type="text" value={poNo} onChange={(e) => setPoNo(e.target.value)} className="w-24 text-right outline-none print:hidden border-b border-gray-300"/>
-                      <span className="hidden print:inline">{poNo}</span>
+                      <input type="text" value={poNo} onChange={(e) => setPoNo(e.target.value)} className={isSavingPdf ? 'hidden' : "w-24 text-right outline-none print:hidden border-b border-gray-300"}/>
+                      <span className={isSavingPdf ? 'inline' : 'hidden print:inline'}>{poNo}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span><strong>VEHICLE NO:</strong></span>
-                      <input type="text" value={vehicleNo} onChange={(e) => setVehicleNo(e.target.value)} className="w-24 text-right outline-none print:hidden border-b border-gray-300"/>
-                      <span className="hidden print:inline">{vehicleNo}</span>
+                      <input type="text" value={vehicleNo} onChange={(e) => setVehicleNo(e.target.value)} className={isSavingPdf ? 'hidden' : "w-24 text-right outline-none print:hidden border-b border-gray-300"}/>
+                      <span className={isSavingPdf ? 'inline' : 'hidden print:inline'}>{vehicleNo}</span>
                     </div>
                   </div>
                 </div>
@@ -192,45 +204,51 @@ const BillingApp = () => {
               </div>
               <div className="flex flex-col sm:flex-row">
                 <div className="flex-1 p-4 border-b-2 sm:border-b-0 sm:border-r-2 border-black">
-                  {/* Bill To Party fields */}
                   <div className="space-y-2">
                     <div>
                       <label className="text-xs font-semibold">Name:</label>
-                      <input type="text" value={billToParty.name} onChange={(e) => setBillToParty({...billToParty, name: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none print:border-none print:bg-transparent" placeholder="Enter party name"/>
+                      <input type="text" value={billToParty.name} onChange={(e) => setBillToParty({...billToParty, name: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none"} placeholder="Enter party name"/>
+                      <p className={isSavingPdf ? 'block' : 'hidden'}>{billToParty.name}</p>
                     </div>
                     <div>
                       <label className="text-xs font-semibold">Address:</label>
-                      <textarea value={billToParty.address} onChange={(e) => setBillToParty({...billToParty, address: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none resize-none print:border-none print:bg-transparent" rows="2" placeholder="Enter address"/>
+                      <textarea value={billToParty.address} onChange={(e) => setBillToParty({...billToParty, address: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none resize-none"} rows="2" placeholder="Enter address"/>
+                      <p className={isSavingPdf ? 'block whitespace-pre-wrap' : 'hidden'}>{billToParty.address}</p>
                     </div>
                     <div>
                       <label className="text-xs font-semibold">GSTIN:</label>
-                      <input type="text" value={billToParty.gstin} onChange={(e) => setBillToParty({...billToParty, gstin: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none print:border-none print:bg-transparent" placeholder="Enter GSTIN"/>
+                      <input type="text" value={billToParty.gstin} onChange={(e) => setBillToParty({...billToParty, gstin: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none"} placeholder="Enter GSTIN"/>
+                      <p className={isSavingPdf ? 'block' : 'hidden'}>{billToParty.gstin}</p>
                     </div>
                     <div>
                       <label className="text-xs font-semibold">CODE:</label>
-                      <input type="text" value={billToParty.code} onChange={(e) => setBillToParty({...billToParty, code: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none print:border-none print:bg-transparent" placeholder="Enter code"/>
+                      <input type="text" value={billToParty.code} onChange={(e) => setBillToParty({...billToParty, code: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none"} placeholder="Enter code"/>
+                      <p className={isSavingPdf ? 'block' : 'hidden'}>{billToParty.code}</p>
                     </div>
                   </div>
                 </div>
                 <div className="flex-1 p-4">
-                  {/* Ship to party fields */}
                   <div className="space-y-2">
                     <div className="flex justify-end items-center">
-                      <button onClick={copyShipToParty} className="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded print:hidden">Copy from Bill To</button>
+                      <button onClick={copyShipToParty} className={isSavingPdf ? 'hidden' : "text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded print:hidden"}>Copy from Bill To</button>
                     </div>
                      <label className="text-xs font-semibold">Name:</label>
-                    <input type="text" value={shipToParty.name} onChange={(e) => setShipToParty({...shipToParty, name: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none print:border-none print:bg-transparent" placeholder="Enter party name"/>
+                    <input type="text" value={shipToParty.name} onChange={(e) => setShipToParty({...shipToParty, name: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none"} placeholder="Enter party name"/>
+                    <p className={isSavingPdf ? 'block' : 'hidden'}>{shipToParty.name}</p>
                     <div>
                       <label className="text-xs font-semibold">Address:</label>
-                      <textarea value={shipToParty.address} onChange={(e) => setShipToParty({...shipToParty, address: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none resize-none print:border-none print:bg-transparent" rows="2" placeholder="Enter address"/>
+                      <textarea value={shipToParty.address} onChange={(e) => setShipToParty({...shipToParty, address: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none resize-none"} rows="2" placeholder="Enter address"/>
+                      <p className={isSavingPdf ? 'block whitespace-pre-wrap' : 'hidden'}>{shipToParty.address}</p>
                     </div>
                     <div>
                       <label className="text-xs font-semibold">GSTIN:</label>
-                      <input type="text" value={shipToParty.gstin} onChange={(e) => setShipToParty({...shipToParty, gstin: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none print:border-none print:bg-transparent" placeholder="Enter GSTIN"/>
+                      <input type="text" value={shipToParty.gstin} onChange={(e) => setShipToParty({...shipToParty, gstin: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none"} placeholder="Enter GSTIN"/>
+                      <p className={isSavingPdf ? 'block' : 'hidden'}>{shipToParty.gstin}</p>
                     </div>
                     <div>
                       <label className="text-xs font-semibold">CODE:</label>
-                      <input type="text" value={shipToParty.code} onChange={(e) => setShipToParty({...shipToParty, code: e.target.value})} className="w-full border-b border-gray-300 focus:border-blue-500 outline-none print:border-none print:bg-transparent" placeholder="Enter code"/>
+                      <input type="text" value={shipToParty.code} onChange={(e) => setShipToParty({...shipToParty, code: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b border-gray-300 outline-none"} placeholder="Enter code"/>
+                      <p className={isSavingPdf ? 'block' : 'hidden'}>{shipToParty.code}</p>
                     </div>
                   </div>
                 </div>
@@ -248,7 +266,7 @@ const BillingApp = () => {
                       <th className="border border-black p-2 text-sm w-16">QTY</th>
                       <th className="border border-black p-2 text-sm w-24">PRICE</th>
                       <th className="border border-black p-2 text-sm w-24">AMOUNT</th>
-                      <th className="border border-black p-2 text-sm print:hidden w-14">Actions</th>
+                      <th className={`border border-black p-2 text-sm print:hidden w-14 ${isSavingPdf ? 'hidden' : ''}`}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -260,37 +278,36 @@ const BillingApp = () => {
                         <td className="border border-black p-1"><input type="number" value={item.qty} onChange={(e) => updateItem(item.id, 'qty', e.target.value)} className="w-full outline-none text-sm text-center print:bg-transparent p-1" placeholder="0"/></td>
                         <td className="border border-black p-1"><input type="number" step="0.01" value={item.price} onChange={(e) => updateItem(item.id, 'price', e.target.value)} className="w-full outline-none text-sm text-right print:bg-transparent p-1" placeholder="0.00"/></td>
                         <td className="border border-black p-2 text-right text-sm">{item.amount.toFixed(2)}</td>
-                        <td className="border border-black p-2 text-center print:hidden"><button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 disabled:opacity-50" disabled={items.length === 1}><Trash2 size={16} /></button></td>
+                        <td className={`border border-black p-2 text-center print:hidden ${isSavingPdf ? 'hidden' : ''}`}><button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 disabled:opacity-50" disabled={items.length === 1}><Trash2 size={16} /></button></td>
                       </tr>
                     ))}
-                    {Array.from({ length: Math.max(0, 10 - items.length) }).map((_, index) => ( <tr key={`empty-${index}`} className="h-8"><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2 print:hidden">&nbsp;</td></tr>))}
+                    {Array.from({ length: Math.max(0, 10 - items.length) }).map((_, index) => ( <tr key={`empty-${index}`} className="h-8"><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className="border border-black p-2">&nbsp;</td><td className={`border border-black p-2 print:hidden ${isSavingPdf ? 'hidden' : ''}`}>&nbsp;</td></tr>))}
                   </tbody>
                 </table>
               </div>
-              <div className="flex print:hidden p-2 border-t border-black"><button onClick={addItem} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded flex items-center gap-2 text-sm"><Plus size={16} />Add Item</button></div>
+              <div className={`flex print:hidden p-2 border-t border-black ${isSavingPdf ? 'hidden' : ''}`}><button onClick={addItem} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded flex items-center gap-2 text-sm"><Plus size={16} />Add Item</button></div>
             </div>
 
             <div className="flex flex-col md:flex-row border-2 border-black">
               <div className="flex-1 p-4 border-b-2 md:border-b-0 md:border-r-2 border-black">
-                 {/* Bank Details & T&C */}
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-bold mb-2">BANK DETAILS</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <strong className="w-20">Bank A/C:</strong>
-                        <input type="text" value={bankDetails.bankAc} onChange={(e) => setBankDetails({...bankDetails, bankAc: e.target.value})} className="w-full border-b print:hidden" placeholder="Enter bank account"/>
-                        <span className="hidden print:inline">{bankDetails.bankAc}</span>
+                        <input type="text" value={bankDetails.bankAc} onChange={(e) => setBankDetails({...bankDetails, bankAc: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b print:hidden"} placeholder="Enter bank account"/>
+                        <span className={isSavingPdf ? 'inline' : 'hidden'}>{bankDetails.bankAc}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <strong className="w-20">Bank IFSC:</strong>
-                        <input type="text" value={bankDetails.bankIfsc} onChange={(e) => setBankDetails({...bankDetails, bankIfsc: e.target.value})} className="w-full border-b print:hidden" placeholder="Enter IFSC code"/>
-                         <span className="hidden print:inline">{bankDetails.bankIfsc}</span>
+                        <input type="text" value={bankDetails.bankIfsc} onChange={(e) => setBankDetails({...bankDetails, bankIfsc: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b print:hidden"} placeholder="Enter IFSC code"/>
+                         <span className={isSavingPdf ? 'inline' : 'hidden'}>{bankDetails.bankIfsc}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <strong className="w-20">Branch:</strong>
-                        <input type="text" value={bankDetails.branch} onChange={(e) => setBankDetails({...bankDetails, branch: e.target.value})} className="w-full border-b print:hidden" placeholder="Enter branch"/>
-                         <span className="hidden print:inline">{bankDetails.branch}</span>
+                        <input type="text" value={bankDetails.branch} onChange={(e) => setBankDetails({...bankDetails, branch: e.target.value})} className={isSavingPdf ? 'hidden' : "w-full border-b print:hidden"} placeholder="Enter branch"/>
+                         <span className={isSavingPdf ? 'inline' : 'hidden'}>{bankDetails.branch}</span>
                       </div>
                     </div>
                   </div>
@@ -301,7 +318,6 @@ const BillingApp = () => {
                 </div>
               </div>
               <div className="w-full md:w-2/5">
-                {/* Totals Table */}
                 <table className="w-full text-sm h-full">
                   <tbody>
                     <tr>
@@ -336,7 +352,6 @@ const BillingApp = () => {
             </div>
 
             <div className="border-2 border-black border-t-0">
-              {/* Footer and Signature */}
               <div className="flex">
                 <div className="flex-1 p-4 border-r border-black text-center">
                   <div className="h-24 flex items-end justify-center">
@@ -345,14 +360,11 @@ const BillingApp = () => {
                 </div>
                 <div className="flex-1 p-4 text-center">
                   <div className="h-24 flex flex-col justify-between">
-                    <div className="text-center text-xs p-1 border-b-2 border-black">
-                    Certified that the particulars given above are true and correct
-                      <p className="font-bold text-sm">FOR: Dhruv Enterprises</p>
-              </div>
                     <div className="flex-grow flex items-center justify-center">
                       <img src={signatureImage} alt="Signature" className="h-12" />
                     </div>
                     <div>
+                      <p className="font-bold text-sm">FOR: Dhruv Enterprises</p>
                       <p className="font-bold text-sm">AUTHORIZED SIGNATORY</p>
                     </div>
                   </div>
@@ -362,7 +374,6 @@ const BillingApp = () => {
           </div>
         </div>
 
-        {/* --- Responsive Control Bar --- */}
         <div className="max-w-4xl mx-auto mt-4 p-4 bg-gray-800 text-white rounded-lg print:hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-gray-700 p-3 rounded-md">
