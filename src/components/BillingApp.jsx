@@ -12,7 +12,9 @@ const BillingApp = () => {
     const [dcNo, setDcNo] = useState('');
     const [poNo, setPoNo] = useState('');
     const [vehicleNo, setVehicleNo] = useState('');
-    const [items, setItems] = useState([{ id: 1, description: '', hsnCode: '', qty: 0, price: 0, amount: 0 }]);
+    // MODIFICATION 1: Add new state for E-way Bill Number
+    const [eWayBillNo, setEWayBillNo] = useState(''); 
+    const [items, setItems] = useState([{ id: 1, description: '', hsnCode: '', qty: 0, price: 0, amount: 0, unit: 'KG' }]);
     const [bankDetails, setBankDetails] = useState({ bankAc: '', bankIfsc: '', branch: '' });
     const [cgstRate, setCgstRate] = useState(9);
     const [sgstRate, setSgstRate] = useState(9);
@@ -51,8 +53,8 @@ const BillingApp = () => {
         }
         return result.trim() + ' Only';
     };
-
-    const addItem = () => setItems([...items, { id: Date.now(), description: '', hsnCode: '', qty: 0, price: 0, amount: 0 }]);
+    
+    const addItem = () => setItems([...items, { id: Date.now(), description: '', hsnCode: '', qty: 0, price: 0, amount: 0, unit: 'KG' }]);
     const removeItem = (id) => { if (items.length > 1) setItems(items.filter(item => item.id !== id)); };
     
     const updateItem = (id, field, value) => {
@@ -87,7 +89,9 @@ const BillingApp = () => {
         setBillToParty({ name: '', address: '', gstin: '', code: '' });
         setShipToParty({ name: '', address: '', gstin: '', code: '' });
         setDcNo(''); setPoNo(''); setVehicleNo('');
-        setItems([{ id: 1, description: '', hsnCode: '', qty: 0, price: 0, amount: 0 }]);
+        // MODIFICATION 2: Reset E-way Bill number on new invoice
+        setEWayBillNo('');
+        setItems([{ id: 1, description: '', hsnCode: '', qty: 0, price: 0, amount: 0, unit: 'KG' }]);
     };
     
     const handlePrint = () => window.print();
@@ -158,7 +162,21 @@ const BillingApp = () => {
                                         <p>Cell : 8778489020</p>
                                         <p>e-mail : dhruvvinayak1421@gmail.com</p>
                                         <p><strong>GST NO :</strong> 33EMUPK6767C1ZL</p>
-                                        <p><strong>E-way Bill NO :</strong></p>
+                                        {/* MODIFICATION 3: Make the E-way Bill field an editable input */}
+                                        <p>
+                                            <strong>E-way Bill NO :</strong>
+                                            {isSavingPdf ? (
+                                                <span className="ml-2">{eWayBillNo}</span>
+                                            ) : (
+                                                <input
+                                                    type="text"
+                                                    value={eWayBillNo}
+                                                    onChange={(e) => setEWayBillNo(e.target.value)}
+                                                    className="ml-2 outline-none border-b w-40"
+                                                    placeholder="Enter E-way Bill No"
+                                                />
+                                            )}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="w-full sm:w-2/5 p-4">
@@ -175,77 +193,77 @@ const BillingApp = () => {
                         </div>
 
                         {/* Bill To / Ship To */}
-<div className="border-2 border-black mb-4">
-    <div className="flex bg-yellow-200">
-        <div className="flex-1 p-2 border-r border-black"><h4 className="font-bold text-center">BILL TO PARTY</h4></div>
-        <div className="flex-1 p-2"><h4 className="font-bold text-center">SHIP TO PARTY</h4></div>
-    </div>
-    <div className="flex flex-col sm:flex-row">
-        <div className="flex-1 p-4 border-b-2 sm:border-b-0 sm:border-r-2 border-black space-y-2">
-            <div>
-                <label className="text-xs font-semibold">Name:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm">{billToParty.name}</p> : 
-                    <input type="text" value={billToParty.name} onChange={(e) => setBillToParty({ ...billToParty, name: e.target.value })} className="w-full border-b outline-none" placeholder="Enter party name" />
-                }
-            </div>
-            <div>
-                <label className="text-xs font-semibold">Address:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm whitespace-pre-wrap">{billToParty.address}</p> : 
-                    <textarea value={billToParty.address} onChange={(e) => setBillToParty({ ...billToParty, address: e.target.value })} className="w-full border-b outline-none resize-none" rows="2" placeholder="Enter party address" />
-                }
-            </div>
-            <div>
-                <label className="text-xs font-semibold">GSTIN:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm">{billToParty.gstin}</p> : 
-                    <input type="text" value={billToParty.gstin} onChange={(e) => setBillToParty({ ...billToParty, gstin: e.target.value })} className="w-full border-b outline-none" placeholder="Enter GSTIN" />
-                }
-            </div>
-            <div>
-                <label className="text-xs font-semibold">CODE:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm">{billToParty.code}</p> : 
-                    <input type="text" value={billToParty.code} onChange={(e) => setBillToParty({ ...billToParty, code: e.target.value })} className="w-full border-b outline-none" placeholder="Enter State Code" />
-                }
-            </div>
-        </div>
-        <div className="flex-1 p-4 space-y-2">
-            <div className="flex justify-end">
-                <button onClick={copyShipToParty} className={isSavingPdf ? 'hidden' : "text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded print:hidden"}>Copy from Bill To</button>
-            </div>
-            <div>
-                <label className="text-xs font-semibold">Name:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm">{shipToParty.name}</p> : 
-                    <input type="text" value={shipToParty.name} onChange={(e) => setShipToParty({ ...shipToParty, name: e.target.value })} className="w-full border-b outline-none" placeholder="Enter party name" />
-                }
-            </div>
-            <div>
-                <label className="text-xs font-semibold">Address:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm whitespace-pre-wrap">{shipToParty.address}</p> : 
-                    <textarea value={shipToParty.address} onChange={(e) => setShipToParty({ ...shipToParty, address: e.target.value })} className="w-full border-b outline-none resize-none" rows="2" placeholder="Enter party address" />
-                }
-            </div>
-            <div>
-                <label className="text-xs font-semibold">GSTIN:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm">{shipToParty.gstin}</p> : 
-                    <input type="text" value={shipToParty.gstin} onChange={(e) => setShipToParty({ ...shipToParty, gstin: e.target.value })} className="w-full border-b outline-none" placeholder="Enter GSTIN" />
-                }
-            </div>
-            <div>
-                <label className="text-xs font-semibold">CODE:</label>
-                {isSavingPdf ? 
-                    <p className="text-sm">{shipToParty.code}</p> : 
-                    <input type="text" value={shipToParty.code} onChange={(e) => setShipToParty({ ...shipToParty, code: e.target.value })} className="w-full border-b outline-none" placeholder="Enter State Code" />
-                }
-            </div>
-        </div>
-    </div>
-</div>
+                        <div className="border-2 border-black mb-4">
+                            <div className="flex bg-yellow-200">
+                                <div className="flex-1 p-2 border-r border-black"><h4 className="font-bold text-center">BILL TO PARTY</h4></div>
+                                <div className="flex-1 p-2"><h4 className="font-bold text-center">SHIP TO PARTY</h4></div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row">
+                                <div className="flex-1 p-4 border-b-2 sm:border-b-0 sm:border-r-2 border-black space-y-2">
+                                    <div>
+                                        <label className="text-xs font-semibold">Name:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm">{billToParty.name}</p> : 
+                                            <input type="text" value={billToParty.name} onChange={(e) => setBillToParty({ ...billToParty, name: e.target.value })} className="w-full border-b outline-none" placeholder="Enter party name" />
+                                        }
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold">Address:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm whitespace-pre-wrap">{billToParty.address}</p> : 
+                                            <textarea value={billToParty.address} onChange={(e) => setBillToParty({ ...billToParty, address: e.target.value })} className="w-full border-b outline-none resize-none" rows="2" placeholder="Enter party address" />
+                                        }
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold">GSTIN:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm">{billToParty.gstin}</p> : 
+                                            <input type="text" value={billToParty.gstin} onChange={(e) => setBillToParty({ ...billToParty, gstin: e.target.value })} className="w-full border-b outline-none" placeholder="Enter GSTIN" />
+                                        }
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold">CODE:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm">{billToParty.code}</p> : 
+                                            <input type="text" value={billToParty.code} onChange={(e) => setBillToParty({ ...billToParty, code: e.target.value })} className="w-full border-b outline-none" placeholder="Enter State Code" />
+                                        }
+                                    </div>
+                                </div>
+                                <div className="flex-1 p-4 space-y-2">
+                                    <div className="flex justify-end">
+                                        <button onClick={copyShipToParty} className={isSavingPdf ? 'hidden' : "text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded print:hidden"}>Copy from Bill To</button>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold">Name:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm">{shipToParty.name}</p> : 
+                                            <input type="text" value={shipToParty.name} onChange={(e) => setShipToParty({ ...shipToParty, name: e.target.value })} className="w-full border-b outline-none" placeholder="Enter party name" />
+                                        }
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold">Address:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm whitespace-pre-wrap">{shipToParty.address}</p> : 
+                                            <textarea value={shipToParty.address} onChange={(e) => setShipToParty({ ...shipToParty, address: e.target.value })} className="w-full border-b outline-none resize-none" rows="2" placeholder="Enter party address" />
+                                        }
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold">GSTIN:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm">{shipToParty.gstin}</p> : 
+                                            <input type="text" value={shipToParty.gstin} onChange={(e) => setShipToParty({ ...shipToParty, gstin: e.target.value })} className="w-full border-b outline-none" placeholder="Enter GSTIN" />
+                                        }
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold">CODE:</label>
+                                        {isSavingPdf ? 
+                                            <p className="text-sm">{shipToParty.code}</p> : 
+                                            <input type="text" value={shipToParty.code} onChange={(e) => setShipToParty({ ...shipToParty, code: e.target.value })} className="w-full border-b outline-none" placeholder="Enter State Code" />
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Items Table */}
                         <div className="border-2 border-black mb-4">
@@ -255,7 +273,7 @@ const BillingApp = () => {
                                         <th className="border border-black p-2 text-sm w-12">S.No.</th>
                                         <th className="border border-black p-2 text-sm">Product Description</th>
                                         <th className="border border-black p-2 text-sm w-24">HSN CODE</th>
-                                        <th className="border border-black p-2 text-sm w-16">QTY</th>
+                                        <th className="border border-black p-2 text-sm w-32">QTY</th>
                                         <th className="border border-black p-2 text-sm w-24">PRICE</th>
                                         <th className="border border-black p-2 text-sm w-24">AMOUNT</th>
                                         {!isSavingPdf && <th className="border border-black p-2 text-sm print:hidden w-14">Actions</th>}
@@ -264,31 +282,52 @@ const BillingApp = () => {
                                 <tbody>
                                     {items.map((item, index) => (
                                         <tr key={item.id} className="min-h-[44px]">
-        <td className="border border-black p-2 text-center text-sm">{index + 1}</td>
-    <td className="border border-black p-0 align-top">
-        {isSavingPdf ?
-            <p className="p-2 text-sm break-words whitespace-pre-wrap">{item.description}</p> :
-            <textarea
-                value={item.description}
-                onChange={(e) => { updateItem(item.id, 'description', e.target.value); handleTextareaResize(e); }}
-                className="w-full h-full p-2 outline-none resize-none overflow-hidden"
-                rows="1"
-                placeholder="Product description" 
-            />
-        }
-    </td>
-    <td className="border border-black p-0 text-center">
-        {isSavingPdf ? <p className="p-2 text-sm">{item.hsnCode}</p> : <input type="text" value={item.hsnCode} onChange={(e) => updateItem(item.id, 'hsnCode', e.target.value)} className="w-full h-full p-2 outline-none text-center" placeholder="HSN" />}
-    </td>
-    <td className="border border-black p-0 text-center">
-        {isSavingPdf ? <p className="p-2 text-sm">{item.qty}</p> : <input type="number" value={item.qty} onChange={(e) => updateItem(item.id, 'qty', e.target.value)} className="w-full h-full p-2 outline-none text-center" placeholder="0" />}
-    </td>
-    <td className="border border-black p-0 text-right">
-        {isSavingPdf ? <p className="p-2 text-sm">{parseFloat(item.price).toFixed(2)}</p> : <input type="number" step="0.01" value={item.price} onChange={(e) => updateItem(item.id, 'price', e.target.value)} className="w-full h-full p-2 outline-none text-right" placeholder="0.00" />}
-    </td>
-    <td className="border border-black p-2 text-right text-sm">{item.amount.toFixed(2)}</td>
-    {!isSavingPdf && <td className="border border-black p-2 text-center print:hidden"><button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 disabled:opacity-50" disabled={items.length === 1}><Trash2 size={16} /></button></td>}
-</tr>
+                                            <td className="border border-black p-2 text-center text-sm">{index + 1}</td>
+                                            <td className="border border-black p-0 align-top">
+                                                {isSavingPdf ?
+                                                    <p className="p-2 text-sm break-words whitespace-pre-wrap">{item.description}</p> :
+                                                    <textarea
+                                                        value={item.description}
+                                                        onChange={(e) => { updateItem(item.id, 'description', e.target.value); handleTextareaResize(e); }}
+                                                        className="w-full h-full p-2 outline-none resize-none overflow-hidden"
+                                                        rows="1"
+                                                        placeholder="Product description" 
+                                                    />
+                                                }
+                                            </td>
+                                            <td className="border border-black p-0 text-center">
+                                                {isSavingPdf ? <p className="p-2 text-sm">{item.hsnCode}</p> : <input type="text" value={item.hsnCode} onChange={(e) => updateItem(item.id, 'hsnCode', e.target.value)} className="w-full h-full p-2 outline-none text-center" placeholder="HSN" />}
+                                            </td>
+                                            <td className="border border-black p-0 text-center">
+                                                {isSavingPdf ? (
+                                                    <p className="p-2 text-sm">{`${item.qty} ${item.unit}`}</p>
+                                                ) : (
+                                                    <div className="flex items-stretch h-full">
+                                                        <input
+                                                            type="number"
+                                                            value={item.qty}
+                                                            onChange={(e) => updateItem(item.id, 'qty', e.target.value)}
+                                                            className="w-full p-2 outline-none text-center"
+                                                            placeholder="0"
+                                                        />
+                                                        <select
+                                                            value={item.unit}
+                                                            onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
+                                                            className="outline-none bg-gray-50 text-sm border-l border-gray-300 cursor-pointer pr-1"
+                                                        >
+                                                            <option value="KG">KG</option>
+                                                            <option value="bundles">bundles</option>
+                                                            <option value="ton">ton</option>
+                                                        </select>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="border border-black p-0 text-right">
+                                                {isSavingPdf ? <p className="p-2 text-sm">{parseFloat(item.price).toFixed(2)}</p> : <input type="number" step="0.01" value={item.price} onChange={(e) => updateItem(item.id, 'price', e.target.value)} className="w-full h-full p-2 outline-none text-right" placeholder="0.00" />}
+                                            </td>
+                                            <td className="border border-black p-2 text-right text-sm">{item.amount.toFixed(2)}</td>
+                                            {!isSavingPdf && <td className="border border-black p-2 text-center print:hidden"><button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 disabled:opacity-50" disabled={items.length === 1}><Trash2 size={16} /></button></td>}
+                                        </tr>
                                     ))}
                                     {Array.from({ length: Math.max(0, 10 - items.length) }).map((_, index) => (
                                         <tr key={`empty-${index}`} className="h-11"><td className="border border-black"></td><td className="border border-black"></td><td className="border border-black"></td><td className="border border-black"></td><td className="border border-black"></td><td className="border border-black"></td>{!isSavingPdf && <td className="border border-black print:hidden"></td>}</tr>
@@ -332,7 +371,7 @@ const BillingApp = () => {
                                     <div className="h-24 flex flex-col justify-between">
                                         <div className="text-center text-xs p-1 border-b-2 border-black">Certified that the particulars given above are true and correct</div>
                                         <div><p className="font-bold text-sm">FOR: Dhruv Enterprises</p></div>
-                                        <div className="h-23 flex flex-col justify-end items-center"><img src={signatureImage} alt="Signature" className="h-6" /></div>
+                                        <div className="h-23 flex flex-col justify-end items-center"><img src={signatureImage} alt="Signature" className="h-5" /></div>
                                         <div><p className="font-bold text-sm">AUTHORIZED SIGNATORY</p></div>
                                     </div>
                                 </div>
