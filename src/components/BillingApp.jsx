@@ -141,7 +141,7 @@ const BillingApp = () => {
                     {/* Header Controls */}
                     <div className="bg-blue-600 text-white p-4 print:hidden">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                            <h1 className="text-xl font-bold flex items-center gap-2 self-center"><FileText size={24} /> Dhruv Enterprises - Billing System</h1>
+                            <h1 className="text-xl font-bold flex items-center gap-2 self-center"><FileText size={24} /> Worlex Enterprises - Billing System</h1>
                             <div className="grid grid-cols-1 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
                                 <button onClick={generateNewInvoice} className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded flex items-center justify-center gap-2"><Plus size={18} /> New Bill</button>
                                 <button onClick={handlePrint} className="bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded flex items-center justify-center gap-2"><Printer size={18} /> Print</button>
@@ -155,12 +155,12 @@ const BillingApp = () => {
                         <div className="border-2 border-black mb-4">
                             <div className="flex flex-col sm:flex-row">
                                 <div className="flex-1 p-4 border-b-2 sm:border-b-0 sm:border-r-2 border-black">
-                                    <h2 className="text-xl font-bold text-center mb-2">Dhruv Enterprises</h2>
+                                    <h2 className="text-xl font-bold text-center mb-2">Worlex Enterprises</h2>
                                     <div className="text-sm space-y-1">
                                         <p>120 I, Bangalow Street, Neikarapatti (Po),</p>
                                         <p>Palani(Tk), Dindigul (Dt),Tamil Nadu.</p>
                                         <p>Cell : 8778489020</p>
-                                        <p>e-mail : dhruvvinayak1421@gmail.com</p>
+                                        <p>e-mail : worlex.in@gmail.com</p>
                                         <p><strong>GST NO :</strong> 33EMUPK6767C1ZL</p>
                                         {/* MODIFICATION 3: Make the E-way Bill field an editable input */}
                                         <p>
@@ -370,7 +370,7 @@ const BillingApp = () => {
                                 <div className="flex-1 p-4 text-center">
                                     <div className="h-24 flex flex-col justify-between">
                                         <div className="text-center text-xs p-1 border-b-2 border-black">Certified that the particulars given above are true and correct</div>
-                                        <div><p className="font-bold text-sm">FOR: Dhruv Enterprises</p></div>
+                                        <div><p className="font-bold text-sm">FOR: Worlex Enterprises</p></div>
                                         <div className="h-23 flex flex-col justify-end items-center"><img src={signatureImage} alt="Signature" className="h-5" /></div>
                                         <div><p className="font-bold text-sm">AUTHORIZED SIGNATORY</p></div>
                                     </div>
